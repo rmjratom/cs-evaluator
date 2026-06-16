@@ -1206,8 +1206,8 @@ function buildPptx() {
       s.addText(String(item[0]), { x: bx + 0.12, y: by + 0.3, w: bw - 0.24, h: 0.55, fontSize: 30, bold: true, color: getScoreColorHex(parseFloat(item[0]), item[1]), margin: 0 });
       s.addText('/' + item[1], { x: bx + 0.12, y: by + 0.82, w: bw - 0.24, h: 0.2, fontSize: 10, color: MUTED, margin: 0 });
     });
-    // Version badge — top-right corner of cover
-    s.addText('v' + APP_VERSION, { x: W - MR - 1.2, y: MT + 0.05, w: 1.2, h: 0.22, fontSize: 9, bold: true, color: GOLD, align: 'right', margin: 0 });
+    // Version badge — bottom-right corner of cover
+    s.addText('v' + APP_VERSION, { x: W - MR - 1.2, y: H - 0.3, w: 1.2, h: 0.22, fontSize: 9, bold: true, color: GOLD, align: 'right', margin: 0 });
     // Right: Executive Verdict
     const RX = W * 0.38 + 0.35;
     const RW = W - RX - MR;
@@ -1221,14 +1221,12 @@ function buildPptx() {
       options: { bullet: false, color: WHITE, fontSize: 11.5, breakLine: i < issues.length - 1, paraSpaceAfter: 6 }
     }));
     if (issueItems.length) s.addText(issueItems, { x: RX, y: MT + 1.34, w: RW, h: H - MT - 1.45, margin: 0, valign: 'top' });
-    // Contact info — centered above score boxes, no logo
+    // Contact info — single centered line with | separators, above score boxes
     const contactAreaW = W * 0.38 - ML - 0.3;
     const contactX = ML + 0.15;
-    const contactY = H - 2.05;
+    const contactY = H - 1.88;
     s.addShape('line', { x: contactX, y: contactY - 0.15, w: contactAreaW, h: 0, line: { color: SURFACE2, width: 0.75 } });
-    s.addText(SCE_BRAND.website, { x: contactX, y: contactY, w: contactAreaW, h: 0.22, fontSize: 9, bold: false, color: MUTED, align: 'center', valign: 'middle', margin: 0 });
-    s.addText(SCE_BRAND.email, { x: contactX, y: contactY + 0.23, w: contactAreaW, h: 0.22, fontSize: 9, bold: false, color: MUTED, align: 'center', valign: 'middle', margin: 0 });
-    s.addText(SCE_BRAND.phone, { x: contactX, y: contactY + 0.46, w: contactAreaW, h: 0.22, fontSize: 9, bold: false, color: MUTED, align: 'center', valign: 'middle', margin: 0 });
+    s.addText(SCE_BRAND.website + '  |  ' + SCE_BRAND.email + '  |  ' + SCE_BRAND.phone, { x: contactX, y: contactY, w: contactAreaW, h: 0.22, fontSize: 7.5, bold: false, color: MUTED, align: 'center', valign: 'middle', margin: 0 });
   }
 
   // ── SLIDE 2: Narrative Analysis ──
