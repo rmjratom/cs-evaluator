@@ -1178,21 +1178,22 @@ function buildPptx() {
   }
 
   function pageFooter(slide) {
-    const fy = H - 0.32;
-    slide.addImage({ data: 'data:image/svg+xml;base64,' + SCE_LOGO_B64, x: W / 2 - 1.5, y: fy, w: 0.55, h: 0.18, sizing: { type: 'contain', w: 0.55, h: 0.18 } });
-    slide.addText(
-      SCE_BRAND.website + '   |   ' + SCE_BRAND.email + '   |   ' + SCE_BRAND.phone,
-      { x: W / 2 - 0.9, y: fy + 0.01, w: 3.4, h: 0.16, fontSize: 6.5, color: '6B7280', align: 'left', valign: 'middle', margin: 0 }
-    );
+    // Intentionally left blank: brand mark + contact info now live in headerBar,
+    // since footer content was repeatedly buried by slide body content.
   }
 
   function headerBar(slide, title, sub) {
     slide.addShape('rect', { x: 0, y: 0, w: W, h: 0.5, fill: { color: SURFACE }, line: { color: SURFACE } });
     slide.addText('CORE STORY EVALUATION', { x: ML, y: 0.06, w: 4, h: 0.18, fontSize: 9, bold: true, color: GOLD, margin: 0 });
     slide.addText((data.company || '') + '  |  ' + (data.url || ''), { x: ML, y: 0.25, w: W - ML - MR, h: 0.18, fontSize: 9, color: MUTED, margin: 0 });
+    const logoW = 0.62, logoH = 0.2;
+    slide.addImage({ data: 'data:image/svg+xml;base64,' + SCE_LOGO_B64, x: W - MR - logoW, y: 0.08, w: logoW, h: logoH, sizing: { type: 'contain', w: logoW, h: logoH } });
+    slide.addText(
+      SCE_BRAND.website + '  |  ' + SCE_BRAND.email + '  |  ' + SCE_BRAND.phone,
+      { x: W - MR - 3.6, y: 0.29, w: 3.6, h: 0.16, fontSize: 6.5, color: MUTED, align: 'right', valign: 'middle', margin: 0 }
+    );
     if (title) slide.addText(title, { x: ML, y: 0.58, w: W - ML - MR, h: 0.32, fontSize: 18, bold: true, color: WHITE, margin: 0 });
     if (sub) slide.addText(sub, { x: ML, y: 0.92, w: W - ML - MR, h: 0.22, fontSize: 10.5, color: MUTED, margin: 0 });
-    pageFooter(slide);
   }
 
   // ── SLIDE 1: Cover ──
@@ -1236,7 +1237,11 @@ function buildPptx() {
       options: { bullet: false, color: WHITE, fontSize: 11.5, breakLine: i < issues.length - 1, paraSpaceAfter: 6 }
     }));
     if (issueItems.length) s.addText(issueItems, { x: RX, y: MT + 1.34, w: RW, h: H - MT - 1.45, margin: 0, valign: 'top' });
-    pageFooter(s);
+    // Contact info — placed in the open space below Buyer Roles, since the
+    // logo is already prominent at the top of this panel.
+    s.addShape('line', { x: ML + 0.15, y: H - 2.22, w: W * 0.38 - ML - 0.3, h: 0, line: { color: SURFACE2, width: 0.75 } });
+    s.addText(SCE_BRAND.website, { x: ML + 0.15, y: H - 2.11, w: W * 0.38 - ML - 0.3, h: 0.18, fontSize: 9, bold: true, color: GOLD, margin: 0 });
+    s.addText(SCE_BRAND.email + '   |   ' + SCE_BRAND.phone, { x: ML + 0.15, y: H - 1.92, w: W * 0.38 - ML - 0.3, h: 0.16, fontSize: 8.5, color: MUTED, margin: 0 });
   }
 
   // ── SLIDE 2: Narrative Analysis ──
