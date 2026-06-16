@@ -1161,15 +1161,15 @@ function buildPptx() {
     slide.addShape('rect', { x: 0, y: 0, w: W, h: 0.5, fill: { color: SURFACE }, line: { color: SURFACE } });
     slide.addText('CORE STORY EVALUATION', { x: ML, y: 0.06, w: 4, h: 0.18, fontSize: 9, bold: true, color: GOLD, margin: 0 });
     slide.addText((data.company || '') + '  |  ' + (data.url || ''), { x: ML, y: 0.25, w: 6, h: 0.18, fontSize: 9, color: MUTED, margin: 0 });
-    // Contact info and logo on the same line, right-aligned
-    const logoW = 0.62, logoH = 0.2;
+    // Logo — correct aspect ratio: viewBox 274.84 x 201.29 → h = w * (201.29/274.84)
+    const logoW = 0.62, logoH = logoW * (201.29 / 274.84);
     const contactW = 3.2;
     const contactX = W - MR - logoW - 0.15 - contactW;
     slide.addText(
       SCE_BRAND.website + '  |  ' + SCE_BRAND.email + '  |  ' + SCE_BRAND.phone,
       { x: contactX, y: 0.06, w: contactW, h: 0.38, fontSize: 6.5, color: MUTED, align: 'right', valign: 'middle', margin: 0 }
     );
-    slide.addImage({ data: 'data:image/svg+xml;base64,' + SCE_LOGO_B64, x: W - MR - logoW, y: 0.08, w: logoW, h: logoH, sizing: { type: 'contain', w: logoW, h: logoH } });
+    slide.addImage({ data: 'data:image/svg+xml;base64,' + SCE_LOGO_B64, x: W - MR - logoW, y: (0.5 - logoH) / 2, w: logoW, h: logoH, isSvgPng: true });
     if (title) slide.addText(title, { x: ML, y: 0.58, w: W - ML - MR, h: 0.32, fontSize: 18, bold: true, color: WHITE, margin: 0 });
     if (sub) slide.addText(sub, { x: ML, y: 0.92, w: W - ML - MR, h: 0.22, fontSize: 10.5, color: MUTED, margin: 0 });
   }
@@ -1215,10 +1215,11 @@ function buildPptx() {
       options: { bullet: false, color: WHITE, fontSize: 11.5, breakLine: i < issues.length - 1, paraSpaceAfter: 6 }
     }));
     if (issueItems.length) s.addText(issueItems, { x: RX, y: MT + 1.34, w: RW, h: H - MT - 1.45, margin: 0, valign: 'top' });
-    // Contact info — above score boxes, left panel
+    // Contact info — above score boxes, left panel. Logo at correct aspect ratio (274.84 x 201.29)
+    const cLogoW = 0.9, cLogoH = cLogoW * (201.29 / 274.84);
     s.addShape('line', { x: ML + 0.15, y: H - 2.38, w: W * 0.38 - ML - 0.3, h: 0, line: { color: SURFACE2, width: 0.75 } });
-    s.addImage({ data: 'data:image/svg+xml;base64,' + SCE_LOGO_B64, x: ML + 0.15, y: H - 2.25, w: 0.9, h: 0.29, sizing: { type: 'contain', w: 0.9, h: 0.29 } });
-    s.addText(SCE_BRAND.website + '   ' + SCE_BRAND.email + '   ' + SCE_BRAND.phone, { x: ML + 0.15 + 1.0, y: H - 2.25, w: W * 0.38 - ML - 1.2, h: 0.29, fontSize: 7.5, color: MUTED, valign: 'middle', margin: 0 });
+    s.addImage({ data: 'data:image/svg+xml;base64,' + SCE_LOGO_B64, x: ML + 0.15, y: H - 2.25, w: cLogoW, h: cLogoH, isSvgPng: true });
+    s.addText(SCE_BRAND.website + '   ' + SCE_BRAND.email + '   ' + SCE_BRAND.phone, { x: ML + 0.15 + cLogoW + 0.1, y: H - 2.25, w: W * 0.38 - ML - cLogoW - 0.3, h: cLogoH, fontSize: 7.5, color: MUTED, valign: 'middle', margin: 0 });
   }
 
   // ── SLIDE 2: Narrative Analysis ──
@@ -1272,7 +1273,7 @@ function buildPptx() {
       const catText = catLabel[item.category] || item.category || '';
       s.addShape('roundRect', { x: cx, y: cy, w: cw, h: 0.22, fill: { color: SURFACE2 }, line: { color: SURFACE2 }, rectRadius: 0.08 });
       s.addShape('rect', { x: cx, y: cy + 0.1, w: cw, h: 0.12, fill: { color: SURFACE2 }, line: { color: SURFACE2 } });
-      s.addText(catText, { x: cx + 0.1, y: cy + 0.02, w: cw - 0.2, h: 0.18, fontSize: 7.5, bold: false, color: MUTED, valign: 'middle', margin: 0 });
+      s.addText(catText, { x: cx + 0.1, y: cy + 0.02, w: cw - 0.2, h: 0.22, fontSize: 10, bold: true, color: GOLD, valign: 'middle', margin: 0 });
       // Item number, name, score
       s.addText(String(item.id), { x: cx + 0.12, y: cy + 0.28, w: 0.3, h: 0.22, fontSize: 9.5, bold: true, color: MUTED, margin: 0 });
       s.addText(disp.short, { x: cx + 0.4, y: cy + 0.26, w: cw - 1.25, h: 0.42, fontSize: 11, bold: true, color: WHITE, valign: 'top', margin: 0 });
@@ -1472,9 +1473,9 @@ function buildPptx() {
     });
 
     const contactItems = [
-      { icon: '🌐', label: 'StoryXL.com' },
-      { icon: '✉', label: 'Rod@StoryXL.com' },
-      { icon: '📞', label: '(407) 633-4355' }
+      { icon: '🌐', label: 'StoryXL.com', href: 'https://StoryXL.com' },
+      { icon: '✉', label: 'Rod@StoryXL.com', href: 'mailto:Rod@StoryXL.com' },
+      { icon: '📞', label: '(407) 633-4355', href: 'tel:+14076334355' }
     ];
     const blockW = 3.0;
     const blockGap = 0.3;
@@ -1485,7 +1486,7 @@ function buildPptx() {
       const bx = startX + idx * (blockW + blockGap);
       const by = contactY + 0.45;
       s.addShape('roundRect', { x: bx, y: by, w: blockW, h: 0.56, fill: { color: SURFACE }, line: { color: SURFACE2 }, rectRadius: 0.06 });
-      s.addText(ci.label, { x: bx, y: by, w: blockW, h: 0.56, fontSize: 12.5, bold: false, color: WHITE, align: 'center', valign: 'middle', margin: 0 });
+      s.addText(ci.label, { x: bx, y: by, w: blockW, h: 0.56, fontSize: 12.5, bold: false, color: WHITE, align: 'center', valign: 'middle', margin: 0, hyperlink: { url: ci.href } });
     });
 
     // Bottom gold line
