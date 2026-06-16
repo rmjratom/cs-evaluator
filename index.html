@@ -1160,13 +1160,16 @@ function buildPptx() {
   function headerBar(slide, title, sub) {
     slide.addShape('rect', { x: 0, y: 0, w: W, h: 0.5, fill: { color: SURFACE }, line: { color: SURFACE } });
     slide.addText('CORE STORY EVALUATION', { x: ML, y: 0.06, w: 4, h: 0.18, fontSize: 9, bold: true, color: GOLD, margin: 0 });
-    slide.addText((data.company || '') + '  |  ' + (data.url || ''), { x: ML, y: 0.25, w: W - ML - MR, h: 0.18, fontSize: 9, color: MUTED, margin: 0 });
+    slide.addText((data.company || '') + '  |  ' + (data.url || ''), { x: ML, y: 0.25, w: 6, h: 0.18, fontSize: 9, color: MUTED, margin: 0 });
+    // Contact info and logo on the same line, right-aligned
     const logoW = 0.62, logoH = 0.2;
-    slide.addImage({ data: 'data:image/svg+xml;base64,' + SCE_LOGO_B64, x: W - MR - logoW, y: 0.08, w: logoW, h: logoH, sizing: { type: 'contain', w: logoW, h: logoH } });
+    const contactW = 3.2;
+    const contactX = W - MR - logoW - 0.15 - contactW;
     slide.addText(
       SCE_BRAND.website + '  |  ' + SCE_BRAND.email + '  |  ' + SCE_BRAND.phone,
-      { x: W - MR - 3.6, y: 0.29, w: 3.6, h: 0.16, fontSize: 6.5, color: MUTED, align: 'right', valign: 'middle', margin: 0 }
+      { x: contactX, y: 0.06, w: contactW, h: 0.38, fontSize: 6.5, color: MUTED, align: 'right', valign: 'middle', margin: 0 }
     );
+    slide.addImage({ data: 'data:image/svg+xml;base64,' + SCE_LOGO_B64, x: W - MR - logoW, y: 0.08, w: logoW, h: logoH, sizing: { type: 'contain', w: logoW, h: logoH } });
     if (title) slide.addText(title, { x: ML, y: 0.58, w: W - ML - MR, h: 0.32, fontSize: 18, bold: true, color: WHITE, margin: 0 });
     if (sub) slide.addText(sub, { x: ML, y: 0.92, w: W - ML - MR, h: 0.22, fontSize: 10.5, color: MUTED, margin: 0 });
   }
@@ -1212,11 +1215,10 @@ function buildPptx() {
       options: { bullet: false, color: WHITE, fontSize: 11.5, breakLine: i < issues.length - 1, paraSpaceAfter: 6 }
     }));
     if (issueItems.length) s.addText(issueItems, { x: RX, y: MT + 1.34, w: RW, h: H - MT - 1.45, margin: 0, valign: 'top' });
-    // Contact info — placed in the open space below Buyer Roles, since the
-    // logo is already prominent at the top of this panel.
-    s.addShape('line', { x: ML + 0.15, y: H - 2.22, w: W * 0.38 - ML - 0.3, h: 0, line: { color: SURFACE2, width: 0.75 } });
-    s.addText(SCE_BRAND.website, { x: ML + 0.15, y: H - 2.11, w: W * 0.38 - ML - 0.3, h: 0.18, fontSize: 9, bold: true, color: GOLD, margin: 0 });
-    s.addText(SCE_BRAND.email + '   |   ' + SCE_BRAND.phone, { x: ML + 0.15, y: H - 1.92, w: W * 0.38 - ML - 0.3, h: 0.16, fontSize: 8.5, color: MUTED, margin: 0 });
+    // Contact info — above score boxes, left panel
+    s.addShape('line', { x: ML + 0.15, y: H - 2.38, w: W * 0.38 - ML - 0.3, h: 0, line: { color: SURFACE2, width: 0.75 } });
+    s.addImage({ data: 'data:image/svg+xml;base64,' + SCE_LOGO_B64, x: ML + 0.15, y: H - 2.25, w: 0.9, h: 0.29, sizing: { type: 'contain', w: 0.9, h: 0.29 } });
+    s.addText(SCE_BRAND.website + '   ' + SCE_BRAND.email + '   ' + SCE_BRAND.phone, { x: ML + 0.15 + 1.0, y: H - 2.25, w: W * 0.38 - ML - 1.2, h: 0.29, fontSize: 7.5, color: MUTED, valign: 'middle', margin: 0 });
   }
 
   // ── SLIDE 2: Narrative Analysis ──
@@ -1240,49 +1242,50 @@ function buildPptx() {
     });
   }
 
-  // ── SLIDES 3+: Core Story Items ──
-  const catDescs = {
-    'Company Identity': 'Who you are, who you serve, and why you exist',
-    'Transforming the Ideal Client': 'The pain, the solution, and the transformation you deliver',
-    'Strategic Foundations': 'The direction, purpose, and competitive positioning of the business'
+  // ── SLIDES 3+: Core Story Items — all 18, 6 per slide → 3 slides ──
+  const catLabel = {
+    'Company Identity': 'Company Identity',
+    'Transforming the Ideal Client': 'Transforming the Ideal Client',
+    'Strategic Foundations': 'Strategic Foundations'
   };
-  const categories = {};
-  (data.core_story_items || []).forEach(item => {
-    if (!categories[item.category]) categories[item.category] = [];
-    categories[item.category].push(item);
-  });
-
+  const allItems = data.core_story_items || [];
   const ITEMS_PER_SLIDE = 6;
-  Object.entries(categories).forEach(([cat, items]) => {
-    for (let pi = 0; pi < items.length; pi += ITEMS_PER_SLIDE) {
-      const s = pres.addSlide();
-      bgSlide(s);
-      headerBar(s, 'Core Story Scores', cat + (catDescs[cat] ? ' — ' + catDescs[cat] : ''));
-      const pageItems = items.slice(pi, pi + ITEMS_PER_SLIDE);
-      const cols = 3, rows = 2;
-      const gap = 0.18;
-      const cw = (W - ML - MR - gap * (cols - 1)) / cols;
-      const ch = (H - 1.3 - gap * (rows - 1)) / rows;
-      pageItems.forEach((item, idx) => {
-        const col = idx % cols;
-        const row = Math.floor(idx / cols);
-        const cx = ML + col * (cw + gap);
-        const cy = 1.25 + row * (ch + gap);
-        const disp = ITEM_DISPLAY[item.id] || { short: item.name };
-        s.addShape('roundRect', { x: cx, y: cy, w: cw, h: ch, fill: { color: SURFACE }, line: { color: SURFACE }, rectRadius: 0.08 });
-        s.addText(String(item.id), { x: cx + 0.12, y: cy + 0.1, w: 0.3, h: 0.22, fontSize: 9.5, bold: true, color: MUTED, margin: 0 });
-        s.addText(disp.short, { x: cx + 0.4, y: cy + 0.08, w: cw - 1.25, h: 0.46, fontSize: 11.5, bold: true, color: WHITE, valign: 'top', margin: 0 });
-        s.addText(item.score + '/10', { x: cx + cw - 0.78, y: cy + 0.08, w: 0.66, h: 0.3, fontSize: 14.5, bold: true, color: getScoreColorHex(item.score, 10), align: 'right', margin: 0 });
-        pptxBarShape(s, cx + 0.12, cy + 0.46, cw - 0.24, item.score, 10);
-        if (item.critical_notes) {
-          s.addText(item.critical_notes, { x: cx + 0.12, y: cy + 0.58, w: cw - 0.24, h: ch - 0.92, fontSize: 9, color: WHITE, valign: 'top', margin: 0 });
-        }
-        if (item.risk_if_unfixed) {
-          s.addText('Risk — ' + item.risk_if_unfixed, { x: cx + 0.12, y: cy + ch - 0.28, w: cw - 0.24, h: 0.24, fontSize: 8.5, italic: true, color: RED, valign: 'top', margin: 0 });
-        }
-      });
-    }
-  });
+  const totalScoreSlides = Math.ceil(allItems.length / ITEMS_PER_SLIDE);
+  for (let pi = 0; pi < allItems.length; pi += ITEMS_PER_SLIDE) {
+    const slideNum = Math.floor(pi / ITEMS_PER_SLIDE) + 1;
+    const s = pres.addSlide();
+    bgSlide(s);
+    headerBar(s, 'Core Story Scores', 'Slide ' + slideNum + ' of ' + totalScoreSlides);
+    const pageItems = allItems.slice(pi, pi + ITEMS_PER_SLIDE);
+    const cols = 3, rows = 2;
+    const gap = 0.18;
+    const cw = (W - ML - MR - gap * (cols - 1)) / cols;
+    const ch = (H - 1.3 - gap * (rows - 1)) / rows;
+    pageItems.forEach((item, idx) => {
+      const col = idx % cols;
+      const row = Math.floor(idx / cols);
+      const cx = ML + col * (cw + gap);
+      const cy = 1.25 + row * (ch + gap);
+      const disp = ITEM_DISPLAY[item.id] || { short: item.name };
+      s.addShape('roundRect', { x: cx, y: cy, w: cw, h: ch, fill: { color: SURFACE }, line: { color: SURFACE }, rectRadius: 0.08 });
+      // Category label strip at top of box
+      const catText = catLabel[item.category] || item.category || '';
+      s.addShape('roundRect', { x: cx, y: cy, w: cw, h: 0.22, fill: { color: SURFACE2 }, line: { color: SURFACE2 }, rectRadius: 0.08 });
+      s.addShape('rect', { x: cx, y: cy + 0.1, w: cw, h: 0.12, fill: { color: SURFACE2 }, line: { color: SURFACE2 } });
+      s.addText(catText, { x: cx + 0.1, y: cy + 0.02, w: cw - 0.2, h: 0.18, fontSize: 7.5, bold: false, color: MUTED, valign: 'middle', margin: 0 });
+      // Item number, name, score
+      s.addText(String(item.id), { x: cx + 0.12, y: cy + 0.28, w: 0.3, h: 0.22, fontSize: 9.5, bold: true, color: MUTED, margin: 0 });
+      s.addText(disp.short, { x: cx + 0.4, y: cy + 0.26, w: cw - 1.25, h: 0.42, fontSize: 11, bold: true, color: WHITE, valign: 'top', margin: 0 });
+      s.addText(item.score + '/10', { x: cx + cw - 0.78, y: cy + 0.26, w: 0.66, h: 0.28, fontSize: 13.5, bold: true, color: getScoreColorHex(item.score, 10), align: 'right', margin: 0 });
+      pptxBarShape(s, cx + 0.12, cy + 0.62, cw - 0.24, item.score, 10);
+      if (item.critical_notes) {
+        s.addText(item.critical_notes, { x: cx + 0.12, y: cy + 0.74, w: cw - 0.24, h: ch - 1.05, fontSize: 9, color: WHITE, valign: 'top', margin: 0 });
+      }
+      if (item.risk_if_unfixed) {
+        s.addText('Risk — ' + item.risk_if_unfixed, { x: cx + 0.12, y: cy + ch - 0.28, w: cw - 0.24, h: 0.24, fontSize: 8.5, italic: true, color: RED, valign: 'top', margin: 0 });
+      }
+    });
+  }
 
   // ── Website Scorecard slide ──
   {
@@ -1335,31 +1338,41 @@ function buildPptx() {
     });
   }
 
-  // ── Cost of a Weak Story slides — split across 2 slides ──
+  // ── The Costs of Having an Incomplete Core Story — 3-column layout ──
   if (Array.isArray(data.cost_of_weak_story) && data.cost_of_weak_story.length) {
     const costItems = data.cost_of_weak_story;
-    const costHalf = Math.ceil(costItems.length / 2);
-    const costPages = [costItems.slice(0, costHalf), costItems.slice(costHalf)];
+    const COST_COLS = 3;
+    const costPerPage = Math.ceil(costItems.length / Math.ceil(costItems.length / (COST_COLS * 3)));
+    const costChunks = [];
+    for (let ci = 0; ci < costItems.length; ci += COST_COLS * 3) {
+      costChunks.push(costItems.slice(ci, ci + COST_COLS * 3));
+    }
 
-    costPages.forEach((pageItems, pageIdx) => {
-      if (!pageItems.length) return;
+    costChunks.forEach((pageItems, pageIdx) => {
       const s = pres.addSlide();
       bgSlide(s);
-      headerBar(s, 'The Costs of Having an Incomplete Core Story', costPages.length > 1 ? '(' + (pageIdx + 1) + ' of ' + costPages.length + ')' : '');
-      const rowH = (H - 1.3) / pageItems.length;
+      headerBar(s, 'The Costs of Having an Incomplete Core Story', costChunks.length > 1 ? '(' + (pageIdx + 1) + ' of ' + costChunks.length + ')' : '');
+      const rowsThisPage = Math.ceil(pageItems.length / COST_COLS);
+      const colW = (W - ML - MR - 0.24) / COST_COLS;
+      const colGap = 0.12;
+      const availH = H - 1.3;
+      const rowH = availH / rowsThisPage;
       pageItems.forEach((item, i) => {
-        const num = pageIdx === 0 ? i + 1 : costHalf + i + 1;
-        const cy = 1.15 + i * rowH;
-        const ch = rowH - 0.08;
-        s.addShape('rect', { x: ML, y: cy, w: 0.04, h: ch, fill: { color: RED }, line: { color: RED } });
-        s.addShape('roundRect', { x: ML + 0.04, y: cy, w: W - ML - MR - 0.04, h: ch, fill: { color: SURFACE }, line: { color: SURFACE }, rectRadius: 0.04 });
-        s.addText(num + '. ' + item.problem, { x: ML + 0.18, y: cy + 0.06, w: W - ML - MR - 0.36, h: 0.26, fontSize: 12, bold: true, color: WHITE, margin: 0 });
-        s.addShape('roundRect', { x: ML + 0.18, y: cy + 0.33, w: 1.05, h: 0.2, fill: { color: MUTED }, line: { color: MUTED }, rectRadius: 0.03 });
-        s.addText('ON THE SITE', { x: ML + 0.18, y: cy + 0.33, w: 1.05, h: 0.2, fontSize: 8.5, bold: true, color: BG, align: 'center', valign: 'middle', margin: 0 });
-        s.addText(item.symptom, { x: ML + 1.33, y: cy + 0.31, w: W - ML - MR - 1.51, h: ch * 0.4, fontSize: 9.5, color: WHITE, valign: 'top', margin: 0 });
-        s.addShape('roundRect', { x: ML + 0.18, y: cy + ch * 0.62, w: 1.15, h: 0.2, fill: { color: RED }, line: { color: RED }, rectRadius: 0.03 });
-        s.addText('IT COSTS THEM', { x: ML + 0.18, y: cy + ch * 0.62, w: 1.15, h: 0.2, fontSize: 8.5, bold: true, color: BG, align: 'center', valign: 'middle', margin: 0 });
-        s.addText(item.consequence, { x: ML + 1.43, y: cy + ch * 0.6, w: W - ML - MR - 1.61, h: ch * 0.36, fontSize: 9.5, color: RED, valign: 'top', margin: 0 });
+        const col = i % COST_COLS;
+        const row = Math.floor(i / COST_COLS);
+        const cx = ML + col * (colW + colGap);
+        const cy = 1.15 + row * rowH;
+        const ch = rowH - 0.1;
+        const num = pageIdx * (COST_COLS * 3) + i + 1;
+        s.addShape('rect', { x: cx, y: cy, w: 0.04, h: ch, fill: { color: RED }, line: { color: RED } });
+        s.addShape('roundRect', { x: cx + 0.04, y: cy, w: colW - 0.04, h: ch, fill: { color: SURFACE }, line: { color: SURFACE }, rectRadius: 0.04 });
+        s.addText(num + '. ' + item.problem, { x: cx + 0.14, y: cy + 0.06, w: colW - 0.22, h: 0.26, fontSize: 10.5, bold: true, color: WHITE, margin: 0 });
+        s.addShape('roundRect', { x: cx + 0.14, y: cy + 0.35, w: 0.9, h: 0.18, fill: { color: MUTED }, line: { color: MUTED }, rectRadius: 0.03 });
+        s.addText('ON THE SITE', { x: cx + 0.14, y: cy + 0.35, w: 0.9, h: 0.18, fontSize: 7.5, bold: true, color: BG, align: 'center', valign: 'middle', margin: 0 });
+        s.addText(item.symptom, { x: cx + 1.1, y: cy + 0.33, w: colW - 1.18, h: ch * 0.38, fontSize: 8.5, color: WHITE, valign: 'top', margin: 0 });
+        s.addShape('roundRect', { x: cx + 0.14, y: cy + ch * 0.64, w: 1.0, h: 0.18, fill: { color: RED }, line: { color: RED }, rectRadius: 0.03 });
+        s.addText('IT COSTS THEM', { x: cx + 0.14, y: cy + ch * 0.64, w: 1.0, h: 0.18, fontSize: 7.5, bold: true, color: BG, align: 'center', valign: 'middle', margin: 0 });
+        s.addText(item.consequence, { x: cx + 1.2, y: cy + ch * 0.62, w: colW - 1.28, h: ch * 0.35, fontSize: 8.5, color: RED, valign: 'top', margin: 0 });
       });
     });
   }
@@ -1422,6 +1435,61 @@ function buildPptx() {
       (ws) => ws.category,
       (ws) => ({ text: ws.raw_score + '/10', color: getScoreColorHex(ws.raw_score, 10) }),
       'Total: ' + Math.round(totalW) + ' / 100');
+  }
+
+  // ── Closing / Contact slide ──
+  {
+    const s = pres.addSlide();
+    bgSlide(s);
+
+    // Gold top bar accent
+    s.addShape('rect', { x: 0, y: 0, w: W, h: 0.08, fill: { color: GOLD }, line: { color: GOLD } });
+
+    // Logo — large, centered top third
+    const logoW = 2.6, logoH = logoW * (201.29 / 274.84);
+    s.addImage({ data: 'data:image/svg+xml;base64,' + SCE_LOGO_B64, x: (W - logoW) / 2, y: 1.0, w: logoW, h: logoH, isSvgPng: true });
+
+    // Tagline
+    s.addText('Story Changes Everything', {
+      x: ML, y: 1.0 + logoH + 0.2, w: W - ML - MR, h: 0.38,
+      fontSize: 20, bold: true, color: WHITE, align: 'center', margin: 0
+    });
+
+    // Gold divider
+    s.addShape('rect', { x: (W - 2.5) / 2, y: 1.0 + logoH + 0.68, w: 2.5, h: 0.04, fill: { color: GOLD }, line: { color: GOLD } });
+
+    // Report label
+    s.addText('Core Story Evaluation — ' + (data.company || ''), {
+      x: ML, y: 1.0 + logoH + 0.84, w: W - ML - MR, h: 0.3,
+      fontSize: 13, color: MUTED, align: 'center', italic: true, margin: 0
+    });
+
+    // Contact info block
+    const contactY = H - 1.85;
+    s.addText('Ready to strengthen your Core Story?', {
+      x: ML, y: contactY, w: W - ML - MR, h: 0.32,
+      fontSize: 14, bold: true, color: WHITE, align: 'center', margin: 0
+    });
+
+    const contactItems = [
+      { icon: '🌐', label: 'StoryXL.com' },
+      { icon: '✉', label: 'Rod@StoryXL.com' },
+      { icon: '📞', label: '(407) 633-4355' }
+    ];
+    const blockW = 3.0;
+    const blockGap = 0.3;
+    const totalBlockW = contactItems.length * blockW + (contactItems.length - 1) * blockGap;
+    const startX = (W - totalBlockW) / 2;
+
+    contactItems.forEach((ci, idx) => {
+      const bx = startX + idx * (blockW + blockGap);
+      const by = contactY + 0.45;
+      s.addShape('roundRect', { x: bx, y: by, w: blockW, h: 0.56, fill: { color: SURFACE }, line: { color: SURFACE2 }, rectRadius: 0.06 });
+      s.addText(ci.label, { x: bx, y: by, w: blockW, h: 0.56, fontSize: 12.5, bold: false, color: WHITE, align: 'center', valign: 'middle', margin: 0 });
+    });
+
+    // Bottom gold line
+    s.addShape('rect', { x: 0, y: H - 0.08, w: W, h: 0.08, fill: { color: GOLD }, line: { color: GOLD } });
   }
 
   return pres;
