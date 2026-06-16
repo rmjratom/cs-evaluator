@@ -1279,17 +1279,25 @@ function buildPptx() {
       const catText = catLabel[item.category] || item.category || '';
       s.addShape('roundRect', { x: cx, y: cy, w: cw, h: 0.22, fill: { color: SURFACE2 }, line: { color: SURFACE2 }, rectRadius: 0.08 });
       s.addShape('rect', { x: cx, y: cy + 0.1, w: cw, h: 0.12, fill: { color: SURFACE2 }, line: { color: SURFACE2 } });
-      s.addText(catText, { x: cx + 0.1, y: cy + 0.02, w: cw - 0.2, h: 0.18, fontSize: 7.5, bold: false, color: MUTED, valign: 'middle', margin: 0 });
+      s.addText(catText, { x: cx + 0.1, y: cy + 0.02, w: cw - 0.2, h: 0.22, fontSize: 10, bold: true, color: GOLD, valign: 'middle', margin: 0 });
       // Item number, name, score
-      s.addText(String(item.id), { x: cx + 0.12, y: cy + 0.28, w: 0.3, h: 0.22, fontSize: 9.5, bold: true, color: MUTED, margin: 0 });
-      s.addText(disp.short, { x: cx + 0.4, y: cy + 0.26, w: cw - 1.25, h: 0.42, fontSize: 11, bold: true, color: WHITE, valign: 'top', margin: 0 });
-      s.addText(item.score + '/10', { x: cx + cw - 0.78, y: cy + 0.26, w: 0.66, h: 0.28, fontSize: 13.5, bold: true, color: getScoreColorHex(item.score, 10), align: 'right', margin: 0 });
+      s.addText(String(item.id), { x: cx + 0.12, y: cy + 0.28, w: 0.3, h: 0.22, fontSize: 11, bold: true, color: MUTED, margin: 0 });
+      s.addText(disp.short, { x: cx + 0.4, y: cy + 0.26, w: cw - 1.25, h: 0.42, fontSize: 12.5, bold: true, color: WHITE, valign: 'top', margin: 0 });
+      s.addText(item.score + '/10', { x: cx + cw - 0.78, y: cy + 0.26, w: 0.66, h: 0.28, fontSize: 14.5, bold: true, color: getScoreColorHex(item.score, 10), align: 'right', margin: 0 });
       pptxBarShape(s, cx + 0.12, cy + 0.62, cw - 0.24, item.score, 10);
+      // Notes + risk flow together starting at 0.74
+      const notesY = cy + 0.74;
+      const notesH = item.critical_notes ? ch - 1.05 : 0;
       if (item.critical_notes) {
-        s.addText(item.critical_notes, { x: cx + 0.12, y: cy + 0.74, w: cw - 0.24, h: ch - 1.05, fontSize: 9, color: WHITE, valign: 'top', margin: 0 });
+        s.addText(item.critical_notes, { x: cx + 0.12, y: notesY, w: cw - 0.24, h: notesH, fontSize: 10.5, color: WHITE, valign: 'top', margin: 0 });
       }
       if (item.risk_if_unfixed) {
-        s.addText('Risk — ' + item.risk_if_unfixed, { x: cx + 0.12, y: cy + ch - 0.28, w: cw - 0.24, h: 0.24, fontSize: 8.5, italic: true, color: RED, valign: 'top', margin: 0 });
+        // Estimate lines used by critical_notes (~55 chars per line at this width/font)
+        const charsPerLine = 52;
+        const noteLines = item.critical_notes ? Math.ceil(item.critical_notes.length / charsPerLine) : 0;
+        const lineH = 0.175;
+        const riskY = item.critical_notes ? notesY + (noteLines * lineH) + 0.06 : notesY;
+        s.addText('⚠ ' + item.risk_if_unfixed, { x: cx + 0.12, y: riskY, w: cw - 0.24, h: ch - (riskY - cy) - 0.04, fontSize: 10, italic: true, color: RED, valign: 'top', margin: 0 });
       }
     });
   }
