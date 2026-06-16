@@ -638,7 +638,7 @@ async function discoverSitemap() {
   } catch(e) {
     const isCors = e.message === 'Failed to fetch' || e.message.includes('NetworkError') || e.message.includes('Load failed');
     statusEl.textContent = isCors
-      ? 'Network error — this tool must run as a local file opened directly in the browser, not from an online viewer or shared link.'
+      ? 'Network error — could not reach the sitemap. Check that the URL is correct and try again.'
       : 'Sitemap lookup failed: ' + e.message;
     statusEl.style.color = 'var(--red)';
   } finally {
@@ -752,8 +752,7 @@ async function runEvaluation() {
     panel.innerHTML = `<div class="error-block">
       <strong>Evaluation failed:</strong> ${err.message}
       ${isCors ? `<div style="margin-top:10px;font-size:12px;line-height:1.7;color:var(--red);">
-        This tool must be run as a <strong>local HTML file</strong> opened directly in Chrome &mdash; not inside an iframe or online viewer.<br>
-        Download the file, then open it in Chrome with <strong>File &rarr; Open File</strong> (or drag it into a new tab).
+        Could not connect to the Anthropic API. Check your API key and network connection, then try again.
       </div>` : ''}
     </div>`;
   } finally {
