@@ -197,9 +197,9 @@
       <div class="section-label">API Key</div>
       <div class="field">
         <label>Anthropic API Key *</label>
-        <input type="password" id="apiKey" placeholder="sk-ant-..." autocomplete="off" onblur="saveApiKey()" onchange="saveApiKey()" />
+        <input type="password" id="apiKey" placeholder="sk-ant-..." autocomplete="off" oninput="saveApiKey()" onblur="saveApiKey()" onchange="saveApiKey()" />
       </div>
-      <p class="hint">Saved locally in your browser. Never sent anywhere except directly to api.anthropic.com.</p>
+      <p class="hint" id="keyStatusHint">Not saved yet — type your key above.</p>
     </div>
     <div class="divider"></div>
     <div>
@@ -378,20 +378,83 @@ LENGTH DISCIPLINE — this matters because the full response must fit in one out
 Be ruthless and specific, but be economical with words. Every field must be filled for all 18 core_story_items and all 8 website_scores — do not skip or abbreviate the list itself, only the prose inside each field.`;
 
 // ── API key persistence ─────────────────────────────────────────────────────
-(function() {
-  const saved = localStorage.getItem('cse_api_key');
-  if (saved) {
-    window.addEventListener('DOMContentLoaded', () => {
-      const el = document.getElementById('apiKey');
-      if (el) el.value = saved;
-    });
+// Tries localStorage first (survives across sessions). If the browser blocks
+// or evicts it (common on iOS Safari under storage pressure or strict privacy
+// settings), falls back to sessionStorage (survives reloads, not app closes)
+// and tells the user clearly which mode is active.
+const KEY_NAME = 'cse_api_key';
+
+function storageAvailable(type) {
+  try {
+    const storage = window[type];
+    const test = '__cse_test__';
+    storage.setItem(test, '1');
+    const ok = storage.getItem(test) === '1';
+    storage.removeItem(test);
+    return ok;
+  } catch (e) {
+    return false;
   }
-})();
+}
+
+function loadApiKey() {
+  if (storageAvailable('localStorage')) {
+    const v = localStorage.getItem(KEY_NAME);
+    if (v) return { value: v, mode: 'local' };
+  }
+  if (storageAvailable('sessionStorage')) {
+    const v = sessionStorage.getItem(KEY_NAME);
+    if (v) return { value: v, mode: 'session' };
+  }
+  return { value: '', mode: 'none' };
+}
 
 function saveApiKey() {
   const val = document.getElementById('apiKey').value.trim();
-  if (val) localStorage.setItem('cse_api_key', val);
+  const hint = document.getElementById('keyStatusHint');
+  if (!val) {
+    if (hint) { hint.textContent = 'Not saved yet — type your key above.'; hint.style.color = 'var(--muted)'; }
+    return;
+  }
+
+  let savedLocal = false;
+  if (storageAvailable('localStorage')) {
+    try {
+      localStorage.setItem(KEY_NAME, val);
+      savedLocal = localStorage.getItem(KEY_NAME) === val;
+    } catch (e) { savedLocal = false; }
+  }
+
+  if (savedLocal) {
+    if (hint) { hint.textContent = 'Saved — will auto-fill next time you open this page.'; hint.style.color = 'var(--green)'; }
+    return;
+  }
+
+  // localStorage failed or got evicted immediately — fall back to sessionStorage
+  if (storageAvailable('sessionStorage')) {
+    try {
+      sessionStorage.setItem(KEY_NAME, val);
+      if (hint) { hint.textContent = "Saved for this browser tab only (your device is blocking persistent storage). You'll need to re-enter it after fully closing the browser."; hint.style.color = 'var(--gold)'; }
+      return;
+    } catch (e) {}
+  }
+
+  if (hint) { hint.textContent = "Could not save the key — your browser is blocking all storage. You'll need to re-enter it each time."; hint.style.color = 'var(--red)'; }
 }
+
+window.addEventListener('DOMContentLoaded', () => {
+  const el = document.getElementById('apiKey');
+  const hint = document.getElementById('keyStatusHint');
+  if (!el) return;
+  const loaded = loadApiKey();
+  if (loaded.value) {
+    el.value = loaded.value;
+    if (hint) {
+      if (loaded.mode === 'local') { hint.textContent = 'Loaded from saved key.'; hint.style.color = 'var(--green)'; }
+      else { hint.textContent = "Loaded from this tab's session (will not persist after closing the browser)."; hint.style.color = 'var(--gold)'; }
+    }
+  }
+});
 
 // ── Passphrase gate ──────────────────────────────────────────────────────────
 const LOCK_HASH = 'a07bb9a41064f311e0d349ab3d33a854426c477f9c0354ed7156e1417e54ea54';
